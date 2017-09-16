@@ -15,6 +15,7 @@ void setup(void);
 void loop(void);
 void callback(char* p_topic, byte* p_payload, unsigned int p_length);
 void reconnect(void);
+void ReadSensors(void);
 void UpdateDisplay(void);
 void UpdateConsole(void);
 void UpdatePWS(void);
@@ -51,7 +52,7 @@ OLED display(D4, D5);
 
 RestClient pws = RestClient("weatherstation.wunderground.com");
 
-String gTemperature, gPressure, gHumidity;
+String gTemperature, gPressure, gHumidity, gRSSI;
 String gUploadStatus = "N/U";
 
 // function called when a MQTT message arrived
@@ -84,30 +85,30 @@ void reconnect() {
   }
 }
 
+void ReadSensors() {
+  gRSSI = WiFi.RSSI();
+  gHumidity = sensor.readHumidity();
+  gTemperature = (sensor.readTemperature() * 9 / 5) + 32;
+  gPressure = bmp.readSealevelPressure(241.20) * 0.0002953;
+}
+
 void UpdateDisplay() {
   display.print("Weather Station");
 
   display.print("WiFi sig: ", 1, 0);
-  String s = String(WiFi.RSSI());
-  display.print((char *)s.c_str(), 1, 9);
+  display.print((char *)gRSSI.c_str(), 1, 9);
   display.print("dBm", 1, 13);
 
   display.print("Humid: ", 2, 0);
-  s = String(sensor.readHumidity(), 1);
-  gHumidity = s;
-  display.print((char *)s.c_str(), 2, 10);
+  display.print((char *)gHumidity.c_str(), 2, 10);
   display.print("%", 2, 15);
 
   display.print("Temp:  ", 3, 0);
-  s = String((sensor.readTemperature() * 9 / 5) + 32, 1);
-  gTemperature = s;
-  display.print((char *)s.c_str(), 3, 10);
+  display.print((char *)gTemperature.c_str(), 3, 10);
   display.print("F", 3, 15);
 
   display.print("Press: ", 4, 0);
-  s = String(bmp.readSealevelPressure(241.20) * 0.0002953);
-  gPressure = s;
-  display.print((char *)s.c_str(), 4, 10);
+  display.print((char *)gPressure.c_str(), 4, 10);
   display.print("\"", 4, 15);
 
   display.print("PWS: ", 6, 0);
@@ -115,35 +116,25 @@ void UpdateDisplay() {
 }
 
 void UpdateConsole() {
-    Serial.print("BMP180 Temp: ");
-    Serial.print((bmp.readTemperature() * 9 / 5) + 32.0);
-    Serial.println(" F");
-
-    Serial.print("BMP180 Pressure: ");
-    Serial.print(bmp.readPressure() * 0.0002953);
-    Serial.println(" in");
-
     Serial.print("Si7021 Humidity: ");
-    Serial.print(sensor.readHumidity());
+    Serial.print(gHumidity);
     Serial.println(" %");
 
     Serial.print("Si7021 Temp: ");
-    Serial.print((sensor.readTemperature() * 9 / 5) + 32.0);
+    Serial.print(gTemperature);
     Serial.println(" F");
 
     Serial.print("BMP180 Sealevel pressure: ");
-    Serial.print(bmp.readSealevelPressure(241.20) * 0.0002953);
+    Serial.print(gPressure);
     Serial.println(" in");
 
     Serial.print("WiFi signal: ");
-    Serial.print(WiFi.RSSI());
+    Serial.print(gRSSI);
     Serial.println(" dBm");
 }
 
 String response;
 void UpdatePWS() {
-
-  // https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?ID=KCASANFR5&PASSWORD=XXXXXX&dateutc=2000-01-01+10%3A32%3A35&winddir=230&windspeedmph=12&windgustmph=12&tempf=70&rainin=0&baromin=29.1&dewptf=68.2&humidity=90&weather=&clouds=&softwaretype=vws%20versionxx&action=updateraw
 
   String request;
 
@@ -160,9 +151,11 @@ void UpdatePWS() {
   request += gHumidity;
   request += "&action=updateraw";
 
-  Serial.println(request);
+  //Serial.println(request);
   response = "";
-  int status = pws.get(request.c_str(), &response);
+
+  int status;
+  status = pws.get(request.c_str(), &response);
 
   Serial.print("Request status: ");
   Serial.println(status);
@@ -190,12 +183,13 @@ void setup() {
   }
 
   // Initialize display
-  display.begin();
+  // display.begin();
 
   // Update the user interface and telnet client
   appTimer.setInterval(2000, UpdateConsole);
-  appTimer.setInterval(2000, UpdateDisplay);
+  //appTimer.setInterval(2000, UpdateDisplay);
   appTimer.setInterval(30000, UpdatePWS);
+  appTimer.setInterval(1000, ReadSensors);
 
   Serial.print("INFO: Connecting to ");
   WiFi.mode(WIFI_STA);
@@ -254,6 +248,8 @@ void setup() {
   // init the MQTT connection
   client.setServer(_MQTT_SERVER_IP_, _MQTT_SERVER_PORT_);
   client.setCallback(callback);
+
+  ReadSensors();
 }
 
 void loop() {
