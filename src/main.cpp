@@ -122,25 +122,25 @@ void ReadSensors() {
 }
 
 void UpdateDisplay() {
-  display.print("Weather Station");
+  display.print((char*)"Weather Station");
 
-  display.print("WiFi sig: ", 1, 0);
+  display.print((char*)"WiFi sig: ", 1, 0);
   display.print((char *)gRSSI.c_str(), 1, 9);
-  display.print("dBm", 1, 13);
+  display.print((char*)"dBm", 1, 13);
 
-  display.print("Humid: ", 2, 0);
+  display.print((char*)"Humid: ", 2, 0);
   display.print((char *)gHumidity.c_str(), 2, 10);
-  display.print("%", 2, 15);
+  display.print((char*)"%", 2, 15);
 
-  display.print("Temp:  ", 3, 0);
+  display.print((char*)"Temp:  ", 3, 0);
   display.print((char *)gTemperature.c_str(), 3, 10);
-  display.print("F", 3, 15);
+  display.print((char*)"F", 3, 15);
 
-  display.print("Press: ", 4, 0);
+  display.print((char*)"Press: ", 4, 0);
   display.print((char *)gPressure.c_str(), 4, 10);
-  display.print("\"", 4, 15);
+  display.print((char*)"\"", 4, 15);
 
-  display.print("PWS: ", 6, 0);
+  display.print((char*)"PWS: ", 6, 0);
   display.print((char *)gUploadStatus.c_str(), 6, 5);
 }
 
