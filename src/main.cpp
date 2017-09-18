@@ -110,6 +110,10 @@ float dewPoint(float celsius, float humidity)
 void ReadSensors() {
   gRSSI = WiFi.RSSI();
   float gHumidityRaw = sensor.readHumidity();
+  // Sensor reports higher than 100? Fix that.
+  if (gHumidityRaw > 100) {
+    gHumidityRaw = 100;
+  }
   gHumidity = gHumidityRaw;
   float gTemperatureRawC = sensor.readTemperature();
   gTemperature = (gTemperatureRawC * 9 / 5) + 32;
