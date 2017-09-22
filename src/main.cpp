@@ -19,6 +19,7 @@ void ReadSensors(void);
 void UpdateDisplay(void);
 void UpdateConsole(void);
 void UpdatePWS(void);
+void MQTTPublish(void);
 
 #define MQTT_VERSION MQTT_VERSION_3_1_1
 #define SWITCH_DURATION 2000
@@ -202,6 +203,13 @@ void UpdatePWS() {
   gUploadStatus = response;
 }
 
+void MQTTPublish() {
+  client.publish("home/outside/temperature", gTemperature.c_str());
+  client.publish("home/outside/humidity", gHumidity.c_str());
+  client.publish("home/outside/pressure", gPressure.c_str());
+  client.publish("home/outside/dew_point", gDewPoint.c_str());
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting");
@@ -226,6 +234,7 @@ void setup() {
   //appTimer.setInterval(2000, UpdateDisplay);
   appTimer.setInterval(30000, UpdatePWS);
   appTimer.setInterval(1000, ReadSensors);
+  appTimer.setInterval(10000, MQTTPublish);
 
   Serial.print("INFO: Connecting to ");
   WiFi.mode(WIFI_STA);
